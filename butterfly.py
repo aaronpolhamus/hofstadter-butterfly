@@ -5,9 +5,9 @@
 import math
 from multiprocessing import Pool, cpu_count
 from PIL import Image
-imgSize = 300
-image = Image.new("RGB", (imgSize, imgSize))
-pixels = image.load()
+
+def flatten_list_of_lists(ls):
+    return [item for sublist in ls for item in sublist]
 
 def apply_parallel(func, argument_tuples_iterator, n_workers=None):
     """See https://stackoverflow.com/questions/5442910/python-multiprocessing-pool-map-for-multiple-arguments
@@ -37,67 +37,91 @@ def get_color(polynew, polyold):
     g = int(abs(r - b))
     return r, g, b
 
-if __name__ == '__main__':
+def pixel_generator(q, p, img_size):
     pi2 = math.pi * 2.0
-    MAXX = imgSize + 1
-    MAXY = imgSize + 1
-    qmax = imgSize
-    for q in range(4, qmax, 2):
-        print(str(100 * q / qmax).zfill(2) + "%")
+    MAXX = img_size + 1
+    MAXY = img_size + 1
+    qmax = img_size
+
+    if gcd(p, q) <= 1:
+        sigma = pi2 * p / q
+        nold = 0
+        ie = 0
+        locations_and_colors  = list()
+        for ie in range(0, MAXY + 2):
+            e = 8.0 * ie / MAXY - 4.0 - 4.0 / MAXY
+            n = 0
+            polyold = 1.0
+            poly = 2.0 * math.cos(sigma) - e
+            if polyold * poly < 0.0: n += 1
+
+            for m in range(2, int(q / 2)):
+                polynew = (2.0 * math.cos(sigma * m) - e) * poly - polyold
+                if poly * polynew < 0.0: n += 1
+                polyold = poly
+                poly = polynew
+
+            polyold = 1.0
+            poly = 2.0 - e
+            if polyold * poly < 0.0: n += 1
+            polynew = (2.0 * math.cos(sigma) - e) * poly - 2.0 * polyold
+            if poly * polynew < 0.0: n += 1
+            polyold = poly
+            poly = polynew
+
+            for m in range(2, int(q / 2)):
+                polynew = (2.0 * math.cos(sigma * m) - e) * poly - polyold
+                if poly * polynew < 0.0: n += 1
+                polyold = poly
+                poly = polynew
+
+            polynew = (2.0 * math.cos(sigma * q / 2.0) - e) * poly - 2.0 * polyold
+            if poly * polynew < 0.0: n += 1
+
+            polyold = 1.0
+            poly = 2.0 - e
+            if polyold * poly < 0.0: n += 1
+            polynew = (2.0 * math.cos(sigma) - e) * poly - 2.0 * polyold
+            if poly * polynew < 0.0: n += 1
+            polyold = poly
+            poly = polynew
+
+            for m in range(2, int(q / 2)):
+                polynew = (2.0 * math.cos(sigma * m) - e) * poly - polyold
+                if poly * polynew < 0.0: n += 1
+                polyold = poly
+                poly = polynew
+
+            polynew = (2.0 * math.cos(sigma * q / 2.0) - e) * poly - 2.0 * polyold
+            if poly * polynew < 0.0: n += 1
+            if n > nold:
+                locations_and_colors.append((int(MAXY - ie), int(MAXX * p / q), get_color(polynew, polyold)))
+                locations_and_colors.append((int(MAXX * p / q), int(MAXY - ie), get_color(polynew, polyold)))
+                # pixels[int(MAXY - ie), int(MAXX * p / q)] = get_color(polynew, polyold)
+                # pixels[int(MAXX * p / q), int(MAXY - ie)] = get_color(polynew, polyold)
+            nold = n
+        return locations_and_colors
+    return None
+
+if __name__ == '__main__':
+    img_size = 100
+
+    # make argument space to parallelize function over
+    arg_tups = []
+    for q in range(4, img_size, 2):
         for p in range(1, q, 2):
-            if gcd(p, q) <= 1:
-                sigma = pi2 * p / q
-                nold = 0
-                ie = 0
-                for ie in range(0, MAXY + 2):
-                    e = 8.0 * ie / MAXY - 4.0 - 4.0 / MAXY
-                    n = 0
-                    polyold = 1.0
-                    poly = 2.0 * math.cos(sigma) - e
-                    if polyold * poly < 0.0: n += 1
+            arg_tups.append((p, q, img_size))
 
-                    for m in range(2, int(q / 2)):
-                        polynew = (2.0 * math.cos(sigma * m) - e) * poly - polyold
-                        if poly * polynew < 0.0: n += 1
-                        polyold = poly
-                        poly = polynew
+    # parallel process lists of locations and colors
+    list_of_lists = apply_parallel(pixel_generator, arg_tups)
 
-                    polyold = 1.0
-                    poly = 2.0 - e
-                    if polyold * poly < 0.0: n += 1
-                    polynew = (2.0 * math.cos(sigma) - e) * poly - 2.0 * polyold
-                    if poly * polynew < 0.0: n += 1
-                    polyold = poly
-                    poly = polynew
+    # flatten list and send to image map
+    list_of_lists = [ls for ls in list_of_lists if ls is not None]
+    colors_and_coordinates = flatten_list_of_lists(list_of_lists)
 
-                    for m in range(2, int(q / 2)):
-                        polynew = (2.0 * math.cos(sigma * m) - e) * poly - polyold
-                        if poly * polynew < 0.0: n += 1
-                        polyold = poly
-                        poly = polynew
+    image = Image.new("RGB", (img_size, img_size))
+    pixels = image.load()
+    for color_and_coord in colors_and_coordinates:
+        pixels[color_and_coord[0], color_and_coord[1]] = color_and_coord[2]
 
-                    polynew = (2.0 * math.cos(sigma * q / 2.0) - e) * poly - 2.0 * polyold
-                    if poly * polynew < 0.0: n += 1
-
-                    polyold = 1.0
-                    poly = 2.0 - e
-                    if polyold * poly < 0.0: n += 1
-                    polynew = (2.0 * math.cos(sigma) - e) * poly - 2.0 * polyold
-                    if poly * polynew < 0.0: n += 1
-                    polyold = poly
-                    poly = polynew
-
-                    for m in range(2, int(q / 2)):
-                        polynew = (2.0 * math.cos(sigma * m) - e) * poly - polyold
-                        if poly * polynew < 0.0: n += 1
-                        polyold = poly
-                        poly = polynew
-
-                    polynew = (2.0 * math.cos(sigma * q / 2.0) - e) * poly - 2.0 * polyold
-                    if poly * polynew < 0.0: n += 1
-                    if n > nold:
-                        pixels[int(MAXY - ie), int(MAXX * p / q)] = get_color(polynew, polyold)
-                        pixels[int(MAXX * p / q), int(MAXY - ie)] = get_color(polynew, polyold)
-                    nold = n
-
-    image.save("/Users/aaronpolhamus/Downloads/HofstadterButterflyFractal_cached.png", "PNG")
+    image.save("/Users/aaronpolhamus/Downloads/HofstadterButterflyFractal_parallel.png", "PNG")
