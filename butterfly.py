@@ -4,10 +4,13 @@
 # FB36 - 20130922
 import math
 from multiprocessing import Pool, cpu_count
+
 from PIL import Image
+
 
 def flatten_list_of_lists(ls):
     return [item for sublist in ls for item in sublist]
+
 
 def apply_parallel(func, argument_tuples_iterator, n_workers=None):
     """See https://stackoverflow.com/questions/5442910/python-multiprocessing-pool-map-for-multiple-arguments
@@ -23,9 +26,11 @@ def apply_parallel(func, argument_tuples_iterator, n_workers=None):
 
     return results
 
-def gcd(a, b): # Greatest Common Divisor
+
+def gcd(a, b):  # Greatest Common Divisor
     if b == 0: return a
     return gcd(b, a % b)
+
 
 def get_color(polynew, polyold):
     poly_ls = [abs(polynew), abs(polyold)]
@@ -37,19 +42,16 @@ def get_color(polynew, polyold):
     g = int(abs(r - b))
     return r, g, b
 
-def pixel_generator(q, p, img_size):
+
+def pixel_generator(q, p, maxx, maxy):
     pi2 = math.pi * 2.0
-    MAXX = img_size + 1
-    MAXY = img_size + 1
-    qmax = img_size
 
     if gcd(p, q) <= 1:
         sigma = pi2 * p / q
         nold = 0
-        ie = 0
-        locations_and_colors  = list()
-        for ie in range(0, MAXY + 2):
-            e = 8.0 * ie / MAXY - 4.0 - 4.0 / MAXY
+        locations_and_colors = list()
+        for ie in range(0, maxy + 2):
+            e = 8.0 * ie / maxy - 4.0 - 4.0 / maxy
             n = 0
             polyold = 1.0
             poly = 2.0 * math.cos(sigma) - e
@@ -95,22 +97,21 @@ def pixel_generator(q, p, img_size):
             polynew = (2.0 * math.cos(sigma * q / 2.0) - e) * poly - 2.0 * polyold
             if poly * polynew < 0.0: n += 1
             if n > nold:
-                locations_and_colors.append((int(MAXY - ie), int(MAXX * p / q), get_color(polynew, polyold)))
-                locations_and_colors.append((int(MAXX * p / q), int(MAXY - ie), get_color(polynew, polyold)))
-                # pixels[int(MAXY - ie), int(MAXX * p / q)] = get_color(polynew, polyold)
-                # pixels[int(MAXX * p / q), int(MAXY - ie)] = get_color(polynew, polyold)
+                locations_and_colors.append((int(maxy - ie), int(maxx * p / q), get_color(polynew, polyold)))
+                locations_and_colors.append((int(maxx * p / q), int(maxy - ie), get_color(polynew, polyold)))
             nold = n
         return locations_and_colors
     return None
 
+
 if __name__ == '__main__':
-    img_size = 100
+    img_size = 3000
 
     # make argument space to parallelize function over
     arg_tups = []
     for q in range(4, img_size, 2):
         for p in range(1, q, 2):
-            arg_tups.append((p, q, img_size))
+            arg_tups.append((q, p, img_size + 1, img_size + 1))
 
     # parallel process lists of locations and colors
     list_of_lists = apply_parallel(pixel_generator, arg_tups)
