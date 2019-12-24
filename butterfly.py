@@ -2,10 +2,19 @@
 # http://en.wikipedia.org/wiki/Hofstadter%27s_butterfly
 # Wolfgang Kinzel/Georg Reents,"Physics by Computer" Springer Press (1998)
 # FB36 - 20130922
+import argparse
 import math
 from multiprocessing import Pool, cpu_count
 
 from PIL import Image
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument("--res", help="How many pixels should the length/width axes have? (l x w)",
+                    type=int, default=200)
+parser.add_argument("--out_path", help="Where would you like to print this thing?",
+                    type=str, default='/tmp/butterly.png')
+args = parser.parse_args()
 
 
 def flatten_list_of_lists(ls):
@@ -37,13 +46,12 @@ def get_color(polynew, polyold):
     poly_ls.sort()
     poly_delta = abs(poly_ls[0] - poly_ls[1])
     r = int(255 * poly_delta / poly_ls[1])
-    ratio = poly_ls[0] / poly_ls[1]
-    b = int(255 * math.log(ratio + 1) / math.log(2))
+    b = int(255 * math.log(poly_ls[0] / poly_ls[1] + 1) / math.log(2))
     g = int(abs(r - b))
     return r, g, b
 
 
-def pixel_generator(q, p, qmax):
+def pixel_generator(p, q, qmax):
     pi2 = math.pi * 2.0
     maxx = qmax + 1
     maxy = qmax + 1
@@ -107,13 +115,13 @@ def pixel_generator(q, p, qmax):
 
 
 if __name__ == '__main__':
-    img_size = 3000
+    img_size = args.res
 
     # make argument space to parallelize function over
     arg_tups = []
     for q in range(4, img_size, 2):
         for p in range(1, q, 2):
-            arg_tups.append((q, p, img_size))
+            arg_tups.append((p, q, img_size))
 
     # parallel process lists of locations and colors
     list_of_lists = apply_parallel(pixel_generator, arg_tups)
@@ -127,4 +135,4 @@ if __name__ == '__main__':
     for color_and_coord in colors_and_coordinates:
         pixels[color_and_coord[0], color_and_coord[1]] = color_and_coord[2]
 
-    image.save("/tmp/butterfly.png", "PNG")
+    image.save(args.out_path, "PNG")
