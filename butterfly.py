@@ -54,12 +54,12 @@ def get_color(polynew, polyold):
 def pixel_generator(p, q, qmax):
     pi2 = math.pi * 2.0
     maxx = maxy = qmax + 1
-    try:
-        if gcd(p, q) <= 1:
-            sigma = pi2 * p / q
-            nold = 0
-            locations_and_colors = list()
-            for ie in range(0, maxy + 2):
+    if gcd(p, q) <= 1:
+        sigma = pi2 * p / q
+        nold = 0
+        locations_and_colors = list()
+        for ie in range(0, maxy + 2):
+            try:
                 e = 8.0 * ie / maxy - 4.0 - 4.0 / maxy
                 n = 0
                 polyold = 1.0
@@ -119,10 +119,10 @@ def pixel_generator(p, q, qmax):
                     locations_and_colors.append((int(maxy - ie), int(maxx * p / q), get_color(polynew, polyold)))
                     locations_and_colors.append((int(maxx * p / q), int(maxy - ie), get_color(polynew, polyold)))
                 nold = n
-            return locations_and_colors
-        return None
-    except:
-        return None
+            except:
+                continue
+        return locations_and_colors
+    return None
 
 
 if __name__ == '__main__':
