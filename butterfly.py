@@ -37,7 +37,8 @@ def apply_parallel(func, argument_tuples_iterator, n_workers=None):
 
 
 def gcd(a, b):  # Greatest Common Divisor
-    if b == 0: return a
+    if b == 0:
+        return a
     return gcd(b, a % b)
 
 
@@ -53,8 +54,7 @@ def get_color(polynew, polyold):
 
 def pixel_generator(p, q, qmax):
     pi2 = math.pi * 2.0
-    maxx = qmax + 1
-    maxy = qmax + 1
+    maxx = maxy = qmax + 1
 
     if gcd(p, q) <= 1:
         sigma = pi2 * p / q
@@ -65,47 +65,57 @@ def pixel_generator(p, q, qmax):
             n = 0
             polyold = 1.0
             poly = 2.0 * math.cos(sigma) - e
-            if polyold * poly < 0.0: n += 1
+            if polyold * poly < 0.0:
+                n += 1
 
             for m in range(2, int(q / 2)):
                 polynew = (2.0 * math.cos(sigma * m) - e) * poly - polyold
-                if poly * polynew < 0.0: n += 1
+                if poly * polynew < 0.0:
+                    n += 1
                 polyold = poly
                 poly = polynew
 
             polyold = 1.0
             poly = 2.0 - e
-            if polyold * poly < 0.0: n += 1
+            if polyold * poly < 0.0:
+                n += 1
             polynew = (2.0 * math.cos(sigma) - e) * poly - 2.0 * polyold
-            if poly * polynew < 0.0: n += 1
+            if poly * polynew < 0.0:
+                n += 1
             polyold = poly
             poly = polynew
 
             for m in range(2, int(q / 2)):
                 polynew = (2.0 * math.cos(sigma * m) - e) * poly - polyold
-                if poly * polynew < 0.0: n += 1
+                if poly * polynew < 0.0:
+                    n += 1
                 polyold = poly
                 poly = polynew
 
             polynew = (2.0 * math.cos(sigma * q / 2.0) - e) * poly - 2.0 * polyold
-            if poly * polynew < 0.0: n += 1
+            if poly * polynew < 0.0:
+                n += 1
 
             polyold = 1.0
             poly = 2.0 - e
-            if polyold * poly < 0.0: n += 1
+            if polyold * poly < 0.0:
+                n += 1
             polynew = (2.0 * math.cos(sigma) - e) * poly - 2.0 * polyold
-            if poly * polynew < 0.0: n += 1
+            if poly * polynew < 0.0:
+                n += 1
             polyold = poly
             poly = polynew
 
             for m in range(2, int(q / 2)):
                 polynew = (2.0 * math.cos(sigma * m) - e) * poly - polyold
-                if poly * polynew < 0.0: n += 1
+                if poly * polynew < 0.0:
+                    n += 1
                 polyold = poly
                 poly = polynew
 
             polynew = (2.0 * math.cos(sigma * q / 2.0) - e) * poly - 2.0 * polyold
-            if poly * polynew < 0.0: n += 1
+            if poly * polynew < 0.0:
+                n += 1
             if n > nold:
                 locations_and_colors.append((int(maxy - ie), int(maxx * p / q), get_color(polynew, polyold)))
                 locations_and_colors.append((int(maxx * p / q), int(maxy - ie), get_color(polynew, polyold)))
@@ -119,9 +129,9 @@ if __name__ == '__main__':
 
     # make argument space to parallelize function over
     arg_tups = []
-    for q in range(4, img_size, 2):
-        for p in range(1, q, 2):
-            arg_tups.append((p, q, img_size))
+    for Q in range(4, img_size, 2):
+        for P in range(1, Q, 2):
+            arg_tups.append((P, Q, img_size))
 
     # parallel process lists of locations and colors
     list_of_lists = apply_parallel(pixel_generator, arg_tups)
