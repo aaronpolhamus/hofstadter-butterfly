@@ -43,8 +43,10 @@ def get_color(polynew, polyold):
     return r, g, b
 
 
-def pixel_generator(q, p, maxx, maxy):
+def pixel_generator(q, p, qmax):
     pi2 = math.pi * 2.0
+    maxx = qmax + 1
+    maxy = qmax + 1
 
     if gcd(p, q) <= 1:
         sigma = pi2 * p / q
@@ -111,7 +113,7 @@ if __name__ == '__main__':
     arg_tups = []
     for q in range(4, img_size, 2):
         for p in range(1, q, 2):
-            arg_tups.append((q, p, img_size + 1, img_size + 1))
+            arg_tups.append((q, p, img_size))
 
     # parallel process lists of locations and colors
     list_of_lists = apply_parallel(pixel_generator, arg_tups)
@@ -125,4 +127,4 @@ if __name__ == '__main__':
     for color_and_coord in colors_and_coordinates:
         pixels[color_and_coord[0], color_and_coord[1]] = color_and_coord[2]
 
-    image.save("/Users/aaronpolhamus/Downloads/HofstadterButterflyFractal_parallel.png", "PNG")
+    image.save("/tmp/butterfly.png", "PNG")
