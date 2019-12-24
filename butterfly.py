@@ -9,7 +9,6 @@ from multiprocessing import Pool, cpu_count
 from PIL import Image
 
 parser = argparse.ArgumentParser()
-
 parser.add_argument("--res", help="How many pixels should the length/width axes have? (l x w)",
                     type=int, default=200)
 parser.add_argument("--out_path", help="Where would you like to print this thing?",
